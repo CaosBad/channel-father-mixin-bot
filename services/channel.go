@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"time"
 
+	client "github.com/MixinNetwork/bot-api-go-client"
 	"github.com/crossle/channel-father-mixin-bot/models"
 	"github.com/crossle/channel-father-mixin-bot/session"
-	client "github.com/mixinmessenger/bot-api-go-client"
 )
 
 type ChannelService struct{}

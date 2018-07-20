@@ -6,10 +6,10 @@ import (
 	"encoding/json"
 	"time"
 
+	"github.com/MixinNetwork/bot-api-go-client"
 	"github.com/crossle/channel-father-mixin-bot/config"
 	"github.com/crossle/channel-father-mixin-bot/models"
 	"github.com/crossle/channel-father-mixin-bot/session"
-	"github.com/mixinmessenger/bot-api-go-client"
 	uuid "github.com/satori/go.uuid"
 )
 

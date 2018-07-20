@@ -10,10 +10,10 @@ import (
 	"github.com/go-pg/pg"
 	uuid "github.com/satori/go.uuid"
 
+	"github.com/MixinNetwork/bot-api-go-client"
 	"github.com/crossle/channel-father-mixin-bot/config"
 	"github.com/crossle/channel-father-mixin-bot/session"
 	jwt "github.com/dgrijalva/jwt-go"
-	"github.com/mixinmessenger/bot-api-go-client"
 )
 
 const users_DDL = `

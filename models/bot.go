@@ -8,8 +8,8 @@ import (
 
 	"github.com/go-pg/pg"
 
+	client "github.com/MixinNetwork/bot-api-go-client"
 	"github.com/crossle/channel-father-mixin-bot/session"
-	client "github.com/mixinmessenger/bot-api-go-client"
 	uuid "github.com/satori/go.uuid"
 )
 
