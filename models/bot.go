@@ -46,7 +46,7 @@ func CreateChannelBot(ctx context.Context, userId, traceId string) (*Bot, error)
 	}
 	if bot == nil {
 		bot = &Bot{
-			BotId:     client.NewV4().String(),
+			BotId:     client.UuidNewV4().String(),
 			UserId:    userId,
 			TraceId:   traceId,
 			ExpireAt:  time.Now().AddDate(1, 0, 0),
