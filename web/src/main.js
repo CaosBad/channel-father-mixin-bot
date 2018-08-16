@@ -13,7 +13,7 @@ import './registerServiceWorker'
 Vue.use(VueAxios, axios)
 Vue.use(Buefy)
 Vue.use(VueMoment)
-Vue.axios.defaults.baseURL = 'http://channel-api.otcxin.one/'
+Vue.axios.defaults.baseURL = 'https://channel-api.otcxin.one/'
 Vue.axios.defaults.headers.post['Content-Type'] = 'application/json'
 
 Vue.config.productionTip = false

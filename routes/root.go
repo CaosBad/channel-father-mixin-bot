@@ -19,7 +19,7 @@ func root(w http.ResponseWriter, r *http.Request, params map[string]string) {
 	now := time.Now()
 	views.RenderDataResponse(w, r, map[string]string{
 		"build":   config.BuildVersion + "-" + runtime.Version(),
-		"website": "http://channel.otcxin.one",
+		"website": "https://channel.otcxin.one",
 		"iso":     now.UTC().Format(time.RFC3339Nano),
 	})
 }
