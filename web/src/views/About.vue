@@ -1,6 +1,6 @@
 <template>
   <div class="about">
-    <h1>I‘m Channel Father Bot</h1>
+    <h1>I‘m Mixin Channel Bot</h1>
   </div>
 </template>
 
