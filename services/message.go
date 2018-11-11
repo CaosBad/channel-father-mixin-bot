@@ -13,11 +13,20 @@ import (
 	uuid "github.com/satori/go.uuid"
 )
 
-type BlazeService struct{}
+type BlazeService struct {
+}
+
+type ResponseMessage struct {
+	blazeClient *bot.BlazeClient
+}
 
 func (service *BlazeService) Run(ctx context.Context) error {
 	for {
-		if err := bot.Loop(ctx, ResponseMessage{}, config.MixinClientId, config.MixinSessionId, config.MixinPrivateKey); err != nil {
+		blazeClient := bot.NewBlazeClient(config.MixinClientId, config.MixinSessionId, config.MixinPrivateKey)
+		response := ResponseMessage{
+			blazeClient: blazeClient,
+		}
+		if err := blazeClient.Loop(ctx, response); err != nil {
 			session.Logger(ctx).Error(err)
 		}
 		session.Logger(ctx).Info("connection loop end")
@@ -26,9 +35,7 @@ func (service *BlazeService) Run(ctx context.Context) error {
 	return nil
 }
 
-type ResponseMessage struct{}
-
-func (r ResponseMessage) OnMessage(ctx context.Context, mc *bot.MessageContext, msg bot.MessageView, uid string) error {
+func (r ResponseMessage) OnMessage(ctx context.Context, msg bot.MessageView, uid string) error {
 	if msg.Category == bot.MessageCategorySystemAccountSnapshot {
 		data, err := base64.StdEncoding.DecodeString(msg.Data)
 		if err != nil {
@@ -41,7 +48,7 @@ func (r ResponseMessage) OnMessage(ctx context.Context, mc *bot.MessageContext, 
 		}
 		err = handleTransfer(ctx, transfer, msg.UserId)
 		if err == nil {
-			sendPaidMessage(ctx, mc, msg)
+			sendPaidMessage(ctx, r.blazeClient, msg)
 		}
 	}
 	return nil
@@ -58,9 +65,10 @@ func handleTransfer(ctx context.Context, transfer bot.TransferView, userId strin
 	_, err = models.CreateChannelBot(ctx, userId, transfer.TraceId)
 	return err
 }
-func sendPaidMessage(ctx context.Context, mc *bot.MessageContext, msg bot.MessageView) error {
+
+func sendPaidMessage(ctx context.Context, client *bot.BlazeClient, msg bot.MessageView) error {
 	content := `您已付费，可以开始创建频道了, 登录 https://developers.mixin.one 创建一个机器人，复制 UserId, SessionId 和 PrivateKey 提交到网页 (如何获取，请看下图)`
-	if err := bot.SendPlainText(ctx, mc, msg, content); err != nil {
+	if err := client.SendPlainText(ctx, msg, content); err != nil {
 		return bot.BlazeServerError(ctx, err)
 	}
 
@@ -72,7 +80,7 @@ func sendPaidMessage(ctx context.Context, mc *bot.MessageContext, msg bot.Messag
 		"height":        1098,
 	}
 	imageData, _ := json.Marshal(imageMap)
-	if err := bot.SendMessage(ctx, mc, msg.ConversationId, msg.UserId, bot.MessageCategoryPlainImage, string(imageData), ""); err != nil {
+	if err := client.SendMessage(ctx, msg.ConversationId, msg.UserId, bot.MessageCategoryPlainImage, string(imageData), ""); err != nil {
 		return bot.BlazeServerError(ctx, err)
 	}
 	return nil

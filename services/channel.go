@@ -12,7 +12,10 @@ import (
 )
 
 type ChannelService struct{}
-type ChannelMessage struct{}
+
+type ChannelMessage struct {
+	blaze *client.BlazeClient
+}
 
 func (service *ChannelService) Run(ctx context.Context) error {
 	bots, err := models.ListBots(ctx)
@@ -23,7 +26,9 @@ func (service *ChannelService) Run(ctx context.Context) error {
 	for _, bot := range bots {
 		go func(bot *models.Bot) {
 			for {
-				if err := client.Loop(ctx, ChannelMessage{}, bot.ClientId, bot.SessionId, bot.PrivateKey); err != nil {
+				blazeClient := client.NewBlazeClient(bot.ClientId, bot.SessionId, bot.PrivateKey)
+				channelMessage := ChannelMessage{blaze: blazeClient}
+				if err := blazeClient.Loop(ctx, channelMessage); err != nil {
 					session.Logger(ctx).Error(err)
 				}
 				session.Logger(ctx).Info("connection loop end")
@@ -35,7 +40,7 @@ func (service *ChannelService) Run(ctx context.Context) error {
 	return nil
 }
 
-func (r ChannelMessage) OnMessage(ctx context.Context, mc *client.MessageContext, msg client.MessageView, uid string) error {
+func (c ChannelMessage) OnMessage(ctx context.Context, msg client.MessageView, uid string) error {
 	if msg.Category == client.MessageCategorySystemAccountSnapshot || msg.Category == client.MessageCategorySystemConversation || msg.ConversationId != client.UniqueConversationId(uid, msg.UserId) {
 		return nil
 	}
@@ -52,7 +57,7 @@ func (r ChannelMessage) OnMessage(ctx context.Context, mc *client.MessageContext
 		content, _ := base64.StdEncoding.DecodeString(msg.Data)
 		for _, subscriber := range subscribers {
 			conversationId := client.UniqueConversationId(uid, subscriber.SubscriberId)
-			client.SendMessage(ctx, mc, conversationId, subscriber.SubscriberId, msg.Category, string(content), "")
+			c.blaze.SendMessage(ctx, conversationId, subscriber.SubscriberId, msg.Category, string(content), "")
 		}
 		return nil
 	}
@@ -67,21 +72,21 @@ func (r ChannelMessage) OnMessage(ctx context.Context, mc *client.MessageContext
 			if err != nil {
 				return err
 			}
-			if err := client.SendPlainText(ctx, mc, msg, "订阅成功"); err != nil {
+			if err := c.blaze.SendPlainText(ctx, msg, "订阅成功"); err != nil {
 				return client.BlazeServerError(ctx, err)
 			}
 
 			conversationId := client.UniqueConversationId(uid, bot.UserId)
 			count := models.CountSubscribers(ctx, uid)
 			content := fmt.Sprintf("已订阅, 订阅人数: %d", count)
-			err = client.SendMessage(ctx, mc, conversationId, bot.UserId, "PLAIN_TEXT", content, msg.UserId)
+			err = c.blaze.SendMessage(ctx, conversationId, bot.UserId, "PLAIN_TEXT", content, msg.UserId)
 			return nil
 		} else if "/stop" == string(data) {
 			err = models.RemoveSubscriber(ctx, uid, msg.UserId)
 			if err != nil {
 				println(err)
 			}
-			if err := client.SendPlainText(ctx, mc, msg, "已取消订阅"); err != nil {
+			if err := c.blaze.SendPlainText(ctx, msg, "已取消订阅"); err != nil {
 				return client.BlazeServerError(ctx, err)
 			}
 			return nil
@@ -91,17 +96,17 @@ func (r ChannelMessage) OnMessage(ctx context.Context, mc *client.MessageContext
 	if err != nil {
 		content := `发送 /start 订阅消息
 发送 /stop 取消订阅`
-		if err := client.SendPlainText(ctx, mc, msg, content); err != nil {
+		if err := c.blaze.SendPlainText(ctx, msg, content); err != nil {
 			return client.BlazeServerError(ctx, err)
 		}
 	} else {
 		content := `已订阅，发送 /stop 取消订阅，有任何问题，请直接回复，只有频道创建人可以看到`
-		if err := client.SendPlainText(ctx, mc, msg, content); err != nil {
+		if err := c.blaze.SendPlainText(ctx, msg, content); err != nil {
 			return client.BlazeServerError(ctx, err)
 		}
 		conversationId := client.UniqueConversationId(uid, bot.UserId)
 		data, _ := base64.StdEncoding.DecodeString(msg.Data)
-		if err = client.SendMessage(ctx, mc, conversationId, bot.UserId, msg.Category, string(data), msg.UserId); err != nil {
+		if err = c.blaze.SendMessage(ctx, conversationId, bot.UserId, msg.Category, string(data), msg.UserId); err != nil {
 			println(err)
 		}
 	}
